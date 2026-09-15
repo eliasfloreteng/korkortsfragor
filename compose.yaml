@@ -1,0 +1,20 @@
+services:
+  driving-licence-questions:
+    image: nginx:alpine
+    restart: unless-stopped
+    expose:
+      - 80
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.korkort.rule: Host(`korkort.eliasf.se`)
+      traefik.http.routers.korkort.entrypoints: websecure
+      traefik.http.services.korkort.loadbalancer.server.port: "80"
+
+networks:
+  proxy:
+    external: true

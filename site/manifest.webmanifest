@@ -1,0 +1,27 @@
+{
+  "name": "Körkortsfrågor – gratis teoriprov",
+  "short_name": "Körkort",
+  "description": "Öva inför teoriprovet för B-körkort. 1865 körkortsfrågor med förklaringar.",
+  "lang": "sv-SE",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f6f7f9",
+  "theme_color": "#1c6dd0",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "icons/screenshot-mobil.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow" },
+    { "src": "icons/screenshot-desktop.png", "sizes": "1280x800", "type": "image/png", "form_factor": "wide" }
+  ],
+  "shortcuts": [
+    { "name": "Provet", "url": "/?start=exam" },
+    { "name": "Snabbtest", "url": "/?start=quick" }
+  ]
+}

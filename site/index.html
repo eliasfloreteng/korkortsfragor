@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teoriprov gratis online – 1865 körkortsfrågor att öva på</title>
+<meta name="description" content="Öva teoriprov gratis online inför körkortet. 1865 körkortsfrågor för B-körkort med förklaring till varje svar, bildfrågor och videofrågor. Inget konto, ingen kostnad.">
+<meta name="keywords" content="teoriprov, teoriprov gratis, teoriprov online, körkortsfrågor, körkortsfrågor gratis, teorifrågor, övningsprov körkort, körkortsteori, teoriprov b-körkort, körkort teori, gratis teoriprov test">
+<link rel="canonical" href="https://korkort.eliasf.se/">
+<meta name="robots" content="index, follow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#1c6dd0">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sv_SE">
+<meta property="og:site_name" content="Körkortsfrågor">
+<meta property="og:title" content="Teoriprov gratis online – 1865 körkortsfrågor">
+<meta property="og:description" content="Öva inför teoriprovet för B-körkort. 1865 frågor med förklaringar, bilder och videoklipp. Gratis och utan inloggning.">
+<meta property="og:url" content="https://korkort.eliasf.se/">
+<meta property="og:image" content="https://korkort.eliasf.se/icons/social.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Körkortsfrågor">
+<meta name="mobile-web-app-capable" content="yes">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Körkortsfrågor",
+  "alternateName": "Gratis teoriprov online",
+  "url": "https://korkort.eliasf.se/",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Web",
+  "inLanguage": "sv-SE",
+  "description": "Gratis övningsprov inför det svenska teoriprovet för B-körkort. 1865 körkortsfrågor med förklaring till varje svar.",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "SEK" },
+  "about": { "@type": "Thing", "name": "Teoriprov för svenskt B-körkort" }
+}
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#" data-action="home">🚗 Körkortsfrågor</a>
+  <button class="ghost" data-action="home" hidden id="abort">Avbryt</button>
+</header>
+
+<main id="app">
+
+  <!-- Startsida -->
+  <section id="screen-start" class="screen">
+    <h1>Öva inför teoriprovet</h1>
+    <p class="lede">
+      <strong id="stat-total">…</strong> frågor för B-körkort, med förklaring till varje svar.
+      Ingen inloggning, ingen kostnad.
+    </p>
+
+    <div class="cards">
+      <button class="card primary" data-start="exam">
+        <span class="card-title">Provet</span>
+        <span class="card-sub">65 frågor · 52 rätt för godkänt · rättas på slutet</span>
+      </button>
+      <button class="card" data-start="quick">
+        <span class="card-title">Snabbtest</span>
+        <span class="card-sub">25 blandade frågor · rättas direkt</span>
+      </button>
+      <button class="card" data-start="mistakes" id="card-mistakes" hidden>
+        <span class="card-title">Repetera misstag</span>
+        <span class="card-sub"><span id="mistakes-count">0</span> frågor du svarat fel på</span>
+      </button>
+    </div>
+
+    <h2>Öva på ett område</h2>
+    <div class="chips" id="category-list"></div>
+
+    <details class="stats" id="stats-box" hidden>
+      <summary>Din statistik</summary>
+      <p id="stats-text"></p>
+      <button class="ghost" data-action="reset-stats">Nollställ statistik</button>
+    </details>
+
+    <footer class="fine">
+      <p>Frågorna kommer från fritt tillgängliga övningsbanker och är ingen officiell
+      källa. Trafikverkets riktiga prov ser annorlunda ut.</p>
+    </footer>
+  </section>
+
+  <!-- Frågevy -->
+  <section id="screen-quiz" class="screen" hidden>
+    <div class="progress">
+      <div class="progress-bar"><div id="progress-fill"></div><span class="progress-car" id="progress-car" aria-hidden="true">🚗</span></div>
+      <div class="progress-text">
+        <span id="progress-label"></span>
+        <span id="score-label"></span>
+      </div>
+    </div>
+
+    <article class="question">
+      <p class="tag" id="q-category"></p>
+      <div id="q-media"></div>
+      <h2 id="q-text"></h2>
+      <div class="options" id="q-options"></div>
+      <div class="explanation" id="q-explanation" hidden></div>
+    </article>
+
+    <div class="nav">
+      <button class="ghost" id="btn-prev" hidden>Föregående</button>
+      <button class="primary" id="btn-next" disabled>Nästa</button>
+    </div>
+  </section>
+
+  <!-- Resultat -->
+  <section id="screen-result" class="screen" hidden>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+    <div class="verdict" id="verdict"></div>
+    <p class="lede" id="result-summary"></p>
+    <div class="nav">
+      <button class="primary" data-action="again">Gör om</button>
+      <button class="ghost" data-action="home">Till startsidan</button>
+    </div>
+    <h2 id="review-heading">Genomgång</h2>
+    <div id="review"></div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

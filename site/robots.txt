@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /media/
+
+Sitemap: https://korkort.eliasf.se/sitemap.xml
