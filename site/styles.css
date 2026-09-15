@@ -220,21 +220,26 @@ button.ghost { background: transparent; }
 .loading { color: var(--muted); }
 
 
-/* --- mobilanpassning --- */
-@media (max-width: 560px) {
-  main { padding-top: 1rem; }
-  h1 { font-size: 1.45rem; }
-  .question { padding: 1rem; border-radius: 14px; }
-  #q-media img, #q-media video { max-height: 38dvh; }
+/* --- mobil och surfplatta --- */
+@media (max-width: 900px) {
+  /* Sticky först när innehållet inte får plats — kort fråga ligger kvar i flödet. */
   #screen-quiz .nav {
     position: sticky; bottom: 0; z-index: 5;
-    margin: 1rem -1rem 0; padding: .75rem 1rem;
+    margin: 1rem calc(-1 * max(1rem, env(safe-area-inset-left))) 0;
+    padding: .75rem max(1rem, env(safe-area-inset-left));
     padding-bottom: calc(.75rem + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(8px);
     border-top: 1px solid var(--line);
   }
   #screen-quiz .nav button { min-height: 50px; font-size: 1.02rem; }
+}
+
+@media (max-width: 560px) {
+  main { padding-top: 1rem; }
+  h1 { font-size: 1.45rem; }
+  .question { padding: 1rem; border-radius: 14px; }
+  #q-media img, #q-media video { max-height: 38dvh; }
   .chip { padding: .55rem .9rem; }
   .review-item { padding: .8rem .9rem; }
 }
