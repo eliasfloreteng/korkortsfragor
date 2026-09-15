@@ -99,6 +99,9 @@ button.ghost { background: transparent; }
 .stats { margin-top: 2rem; color: var(--muted); font-size: .925rem; }
 .stats summary { cursor: pointer; }
 .fine { margin-top: 3rem; color: var(--muted); font-size: .8rem; }
+.fine p:last-child { margin-bottom: 0; }
+.fine a { color: var(--muted); text-decoration-color: var(--line); }
+.fine a:hover { color: var(--accent); text-decoration-color: currentColor; }
 
 /* --- frågevy --- */
 .progress { margin-bottom: 1.25rem; }
