@@ -1,2 +1,6 @@
 # Bilder och videoklipp (drygt 750 MB) hämtas med ./fetch_media.py
 site/media/
+
+# Påminnelsetjänstens prenumerationer och VAPID-nycklar
+push/data/
+push/node_modules/

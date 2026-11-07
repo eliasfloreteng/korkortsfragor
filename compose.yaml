@@ -15,6 +15,22 @@ services:
       traefik.http.routers.korkort.entrypoints: websecure
       traefik.http.services.korkort.loadbalancer.server.port: "80"
 
+  # Påminnelser via Web Push. Delar värdnamn med sidan, så inga CORS-frågor.
+  push:
+    build: ./push
+    restart: unless-stopped
+    expose:
+      - 3000
+    volumes:
+      - ./push/data:/data
+    networks:
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.korkort-push.rule: Host(`korkort.eliasf.se`) && PathPrefix(`/api/push`)
+      traefik.http.routers.korkort-push.entrypoints: websecure
+      traefik.http.services.korkort-push.loadbalancer.server.port: "3000"
+
 networks:
   proxy:
     external: true

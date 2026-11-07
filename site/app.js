@@ -85,6 +85,7 @@ const stats = {
     if (wasCorrect) missed.delete(question.id);
     else missed.add(question.id);
     store.write("mistakes", [...missed].slice(-300));
+    reminders.notePractice();
   },
   finishQuiz() {
     const s = stats.get();
@@ -96,6 +97,174 @@ const stats = {
     store.write("mistakes", []);
   },
 };
+
+/* ---------- daglig påminnelse (Web Push) ---------- */
+
+const today = () => new Date().toLocaleDateString("sv-SE");   // YYYY-MM-DD, lokal tid
+
+const reminders = {
+  supported: "serviceWorker" in navigator && "PushManager" in window && "Notification" in window,
+  // iOS ger bara push till appar som lagts till på hemskärmen; i Safari saknas PushManager.
+  ios: /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+       (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1),
+  key: null,
+  busy: false,
+  error: "",
+
+  saved: () => store.read("reminder", null),        // { time: "18:00" } när påslagen
+
+  async api(path, method, body) {
+    const response = await fetch("/api/push/" + path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body && JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const { error } = await response.json().catch(() => ({}));
+      throw new Error(error || `HTTP ${response.status}`);
+    }
+    return response.status === 200 ? response.json() : null;
+  },
+
+  async serverKey() {
+    if (!this.key) {
+      const { publicKey } = await this.api("key", "GET");
+      const raw = atob(publicKey.replace(/-/g, "+").replace(/_/g, "/"));
+      this.key = Uint8Array.from(raw, (c) => c.charCodeAt(0));
+    }
+    return this.key;
+  },
+
+  async subscription() {
+    const registration = await navigator.serviceWorker.ready;
+    return registration.pushManager.getSubscription();
+  },
+
+  async put(subscription, time, confirm = false) {
+    await this.api("subscription", "PUT", {
+      subscription, time, confirm,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+  },
+
+  async enable() {
+    const time = el("reminder-time").value || "18:00";
+    // Frågan om lov måste komma direkt från klicket, innan något annat väntas in.
+    if (await Notification.requestPermission() !== "granted") return;
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: await this.serverKey(),
+    });
+    await this.put(subscription, time, true);
+    store.write("reminder", { time });
+    store.write("practiced", null);
+  },
+
+  async disable() {
+    store.write("reminder", null);
+    const subscription = await this.subscription();
+    if (!subscription) return;
+    await this.api("subscription", "DELETE", { endpoint: subscription.endpoint }).catch(() => {});
+    await subscription.unsubscribe();
+  },
+
+  async changeTime(time) {
+    const subscription = await this.subscription();
+    if (!this.saved() || !subscription) return;
+    await this.put(subscription, time);
+    store.write("reminder", { time });
+  },
+
+  /** Vid start: stäm av mot webbläsaren och håll serverns kopia aktuell. */
+  async sync() {
+    if (!this.supported) return;
+    const subscription = await this.subscription();
+    const saved = this.saved();
+    if (!subscription || Notification.permission !== "granted") {
+      if (saved) store.write("reminder", null);    // återkallad i webbläsaren
+    } else if (saved) {
+      // Har servern bytt nycklar duger den gamla prenumerationen inte längre.
+      const key = new Uint8Array(subscription.options.applicationServerKey || []);
+      const current = await this.serverKey();
+      if (key.length && key.join() !== current.join()) {
+        await subscription.unsubscribe();
+        store.write("reminder", null);
+        this.error = "Påminnelserna behöver slås på igen.";
+      } else {
+        await this.put(subscription, saved.time);
+      }
+    }
+    this.render();
+  },
+
+  /** Den som övar i dag ska inte få dagens påminnelse. */
+  notePractice() {
+    if (!this.saved() || store.read("practiced") === today()) return;
+    store.write("practiced", today());
+    this.subscription()
+      .then((s) => s && this.api("practiced", "POST", { endpoint: s.endpoint }))
+      .catch(() => store.write("practiced", null));
+  },
+
+  async run(action) {
+    if (this.busy) return;
+    this.busy = true;
+    this.error = "";
+    this.render();
+    try {
+      await action();
+    } catch (error) {
+      this.error = `Det gick inte: ${error.message}`;
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  },
+
+  render() {
+    const box = el("reminder");
+    const text = el("reminder-text");
+    const controls = el("reminder-controls");
+    text.classList.remove("bad");
+
+    if (!this.supported) {
+      box.hidden = !this.ios;
+      controls.hidden = true;
+      text.textContent = "Lägg till appen på hemskärmen för att kunna få påminnelser: " +
+        "tryck på Dela och välj Lägg till på hemskärmen.";
+      return;
+    }
+    box.hidden = false;
+
+    if (Notification.permission === "denied") {
+      controls.hidden = true;
+      text.classList.add("bad");
+      text.textContent = "Notiser är blockerade för sidan. Tillåt dem i webbläsarens " +
+        "inställningar för att kunna få påminnelser.";
+      return;
+    }
+    controls.hidden = false;
+
+    const saved = this.saved();
+    if (saved) el("reminder-time").value = saved.time;
+    text.classList.toggle("bad", Boolean(this.error));
+    text.textContent = this.error || (saved
+      ? `Du får en notis kl. ${saved.time} de dagar du inte har övat.`
+      : "Få en notis de dagar du inte har övat, vid den tid du väljer.");
+
+    const toggle = el("reminder-toggle");
+    toggle.textContent = saved ? "Stäng av" : "Slå på";
+    toggle.className = saved ? "ghost" : "primary";
+    toggle.disabled = this.busy;
+  },
+};
+
+el("reminder-toggle").addEventListener("click", () =>
+  reminders.run(() => (reminders.saved() ? reminders.disable() : reminders.enable())));
+el("reminder-time").addEventListener("change", (event) => {
+  if (event.target.value) reminders.run(() => reminders.changeTime(event.target.value));
+});
 
 /* ---------- startsidan ---------- */
 
@@ -132,6 +301,8 @@ function renderStart() {
       `${plural(s.quizzes, "avklarat test", "avklarade test")} · ` +
       `${s.correct} rätt av ${s.answered} besvarade frågor (${pct} %).`;
   }
+
+  reminders.render();
 }
 
 /* ---------- en omgång ---------- */
@@ -502,5 +673,8 @@ fetch("data/questions.json")
   });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js");
+    reminders.sync().catch(() => {});     // påminnelsetjänsten är inte kritisk för resten
+  });
 }

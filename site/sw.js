@@ -1,6 +1,6 @@
 /* Service worker: appskalet och frågebanken cachas, media sparas efter hand. */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `korkort-skal-${VERSION}`;
 const MEDIA = `korkort-media-${VERSION}`;
 const MEDIA_MAX = 200;                    // ~200 bilder/klipp, sedan slängs de äldsta
@@ -44,6 +44,7 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;       // påminnelsetjänsten, aldrig cachad
 
   // Media: cache-first, lagras först när frågan faktiskt visats.
   if (url.pathname.startsWith("/media/")) {
@@ -71,5 +72,51 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => cached);
     return cached || network;
+  })());
+});
+
+/* ---------- påminnelser (Web Push) ---------- */
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data?.json() ?? {}; } catch { /* tom eller trasig payload */ }
+  // iOS drar in push-rätten för appar som tar emot push utan att visa en notis,
+  // så en notis visas alltid.
+  event.waitUntil(self.registration.showNotification(data.title || "Körkortsfrågor", {
+    body: data.body || "Dags att öva inför teoriprovet!",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: "reminder",
+    lang: "sv",
+    data: { url: data.url || "/" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  event.waitUntil((async () => {
+    const open = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const client = open.find((c) => new URL(c.url).origin === self.location.origin);
+    if (client) {
+      await client.focus();
+      return client.navigate(url);
+    }
+    return self.clients.openWindow(url);
+  })());
+});
+
+// Webbläsaren kan byta ut prenumerationen på egen hand (Firefox gör det).
+// Flytta då över påminnelsen till den nya, med samma tid och tidszon.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil((async () => {
+    const old = event.oldSubscription;
+    const subscription = event.newSubscription ?? await self.registration.pushManager.subscribe(
+      old?.options ?? { userVisibleOnly: true });
+    await fetch("/api/push/subscription", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription, replaces: old?.endpoint }),
+    });
   })());
 });

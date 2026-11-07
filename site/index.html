@@ -82,6 +82,17 @@
     <h2>Öva på ett område</h2>
     <div class="chips" id="category-list"></div>
 
+    <section class="reminder" id="reminder" hidden>
+      <h2>Daglig påminnelse</h2>
+      <p class="reminder-text" id="reminder-text"></p>
+      <div class="reminder-row" id="reminder-controls">
+        <label class="reminder-time">Klockan
+          <input type="time" id="reminder-time" value="18:00" required>
+        </label>
+        <button class="primary" id="reminder-toggle" type="button">Slå på</button>
+      </div>
+    </section>
+
     <details class="stats" id="stats-box" hidden>
       <summary>Din statistik</summary>
       <p id="stats-text"></p>
